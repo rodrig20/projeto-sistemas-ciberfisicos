@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+
+.vscode/
+build/
+
+model*
+!model.py
+
+tools/data/empty
