@@ -65,6 +65,7 @@ class BoardBlobDetector:
         pred = self.model.predict([arr])
         out = pred[0][0]
 
+        class_names = ["cross", "empty", "round"]
         best_idx = 0
         best_val = out[0]
 
@@ -73,7 +74,7 @@ class BoardBlobDetector:
                 best_val = out[i]
                 best_idx = i
 
-        return best_idx
+        return class_names[best_idx]
 
     def extract_grid(self, board_img):
 
