@@ -17,6 +17,10 @@ def test_pytorch_model():
     with torch.no_grad():
         for data, target in test_loader:
             data, target = data.to(device), target.to(device)
+            
+            # Binarização
+            data = (data > 0.5).float()
+            
             output = model(data)
             _, predicted = torch.max(output, 1)
             total += target.size(0)

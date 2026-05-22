@@ -37,6 +37,10 @@ def load_image(path):
     img = Image.open(path).convert("L")
     img = img.resize((28, 28))
     img = np.array(img).astype(np.float32) / 255.0
+    
+    # Binarização
+    img = (img > 0.5).astype(np.float32)
+    
     img = img.reshape(1, 1, 28, 28)
     return img
 

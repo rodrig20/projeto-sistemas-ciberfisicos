@@ -30,9 +30,9 @@ def train():
         for data, target in train_loader:
 
             data, target = data.to(device), target.to(device)
-
-            # DEBUG (útil agora)
-            # print(data.shape)  # deve ser [B, 1, 28, 28]
+            
+            # Binarização: converte pixels > 0.5 para 1.0, caso contrário 0.0
+            data = (data > 0.5).float()
 
             optimizer.zero_grad()
 
@@ -69,7 +69,6 @@ def train():
     print(f"\nAccuracy: {100 * correct / total:.2f}%")
 
     torch.save(model.state_dict(), "model.pth")
-
 
 if __name__ == "__main__":
     train()
