@@ -53,7 +53,7 @@ def prepare_data(data_root="data"):
         transforms.RandomAffine(
             degrees=0,
             translate=(0.1, 0.1),
-            scale=(0.9, 1.1)
+            scale=(0.7, 1)
         ),
         transforms.ToTensor()
     ])

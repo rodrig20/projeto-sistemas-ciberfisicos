@@ -44,6 +44,12 @@ class BluetoothController {
      */
     uint16_t read();
 
+    /**
+     * @brief Retorna se o dispositivo está conectado.
+     * @return true se conectado.
+     */
+    bool isConnected();
+
    private:
     const char* _serviceUUID;
     const char* _charUUID;

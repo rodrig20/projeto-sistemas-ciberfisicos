@@ -1,102 +1,81 @@
 #include "SmoothServo.h"
 
-/*
- * Construtor, inicializa as propriedades básicas do servo.
- */
 SmoothServo::SmoothServo(int pin) {
     _pin = pin;
-    _currentAngle = 90;
-    _targetAngle = 90;
-    _startAngle = 90;
+    _currentAngle = 90.0f;
+    _targetAngle = 90.0f;
+    _startAngle = 90.0f;
     _stepInterval = 10;
     _lastStepTime = 0;
 }
 
-/*
- * Inicializa a instância do servo no pino e define a posição inicial.
- */
 void SmoothServo::begin(int initialAngle) {
-    _currentAngle = initialAngle;
+    _currentAngle = (float)initialAngle;
     _targetAngle = _currentAngle;
     _startAngle = _currentAngle;
 
     _servo.attach(_pin);
-    _servo.write(_currentAngle);
+    // Converte graus para microssegundos (típico: 544 a 2400us)
+    int us = 544 + (int)((_currentAngle / 180.0f) * (2400 - 544));
+    _lastWrittenUs = us;
+    _servo.writeMicroseconds(us);
 }
 
-/*
- * Define o ângulo de destino e inicia o processo de transição.
- */
 void SmoothServo::setTargetAngle(int angle) {
-    if (angle != _targetAngle) {
-        Serial.print("[ACT] Servo pin ");
-        Serial.print(_pin);
-        Serial.print(" new target: ");
-        Serial.println(angle);
-
+    float target = (float)angle;
+    if (abs(target - _targetAngle) > 0.1f) {
         _startAngle = _currentAngle;
-        _targetAngle = angle;
+        _targetAngle = target;
+        _lastStepTime = millis();
     }
 }
 
-/*
- * Define o intervalo básico de tempo entre os passos do servo.
- */
 void SmoothServo::setStepInterval(unsigned long interval) {
     _stepInterval = interval;
 }
 
-/*
- * Processa a atualização do ângulo do servo para criar um movimento suave.
- */
 bool SmoothServo::update() {
-    // Se já atingiu o alvo, não faz nada
-    if (_currentAngle == _targetAngle) {
-        return false;
-    }
-
-    unsigned long currentTime = millis();
-
-    int totalDist = abs(_targetAngle - _startAngle);
-
-    // Evita divisão por zero se não houver distância para percorrer
-    if (totalDist == 0) {
+    if (abs(_currentAngle - _targetAngle) < 0.05f) {
         _currentAngle = _targetAngle;
         return false;
     }
 
-    // Calcula o progresso atual do movimento (0.0 a 1.0)
-    int distMoved = abs(_currentAngle - _startAngle);
-    float progress = (float)distMoved / totalDist;
+    unsigned long currentTime = millis();
+    unsigned long dt = currentTime - _lastStepTime;
+    
+    // Se o loop for muito rápido, espera pelo menos 1ms para processar
+    if (dt < 1) return true;
+    _lastStepTime = currentTime;
 
-    // Aplica curva senoidal para suavizar aceleração e desaceleração
-    float speedFactor = sin(progress * PI);
-
-    // Garante uma velocidade mínima para o movimento não travar
-    if (speedFactor < 0.2f) {
-        speedFactor = 0.2f;
+    float totalDist = abs(_targetAngle - _startAngle);
+    if (totalDist < 0.1f) {
+        _currentAngle = _targetAngle;
+        return false;
     }
 
-    // Calcula o intervalo real baseado no fator de velocidade
-    unsigned long effectiveInterval =
-        (unsigned long)(_stepInterval / speedFactor);
+    // Calcula quanto deve mover neste intervalo de tempo (Velocidade Linear)
+    // _stepInterval define ms por grau. Velocidade = 1.0 / interval graus/ms
+    float baseSpeed = 1.0f / (float)_stepInterval; 
+    float step = baseSpeed * dt;
 
-    // Realiza o passo de movimento se o tempo decorrido for suficiente
-    if (currentTime - _lastStepTime >= effectiveInterval) {
-        if (_currentAngle < _targetAngle) {
-            _currentAngle++;
-        } else {
-            _currentAngle--;
-        }
+    if (_currentAngle < _targetAngle) {
+        _currentAngle += step;
+        if (_currentAngle > _targetAngle) _currentAngle = _targetAngle;
+    } else {
+        _currentAngle -= step;
+        if (_currentAngle < _targetAngle) _currentAngle = _targetAngle;
+    }
 
-        _servo.write(_currentAngle);
-        _lastStepTime = currentTime;
+    // Escreve com alta resolução (microssegundos)
+    int us = 544 + (int)((_currentAngle / 180.0f) * (2400 - 544));
+    if (us != _lastWrittenUs) {
+        _servo.writeMicroseconds(us);
+        _lastWrittenUs = us;
     }
 
     return true;
 }
 
-/*
- * Retorna a diferença absoluta entre o ângulo atual e o alvo.
- */
-int SmoothServo::getDifference() { return abs(_currentAngle - _targetAngle); }
+int SmoothServo::getDifference() { 
+    return (int)abs(_currentAngle - _targetAngle); 
+}

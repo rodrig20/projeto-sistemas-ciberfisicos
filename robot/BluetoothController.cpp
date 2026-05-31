@@ -143,3 +143,7 @@ uint16_t BluetoothController::read() {
     _hasNewData = false;
     return _lastValue;
 }
+
+bool BluetoothController::isConnected() {
+    return _connected;
+}

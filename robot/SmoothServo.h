@@ -41,23 +41,24 @@ class SmoothServo {
     /**
      * @brief Obtém o ângulo atual do servo.
      */
-    int getCurrentAngle() const { return _currentAngle; }
+    float getCurrentAngle() const { return _currentAngle; }
 
     /**
      * @brief Verifica se o servo chegou ao destino.
      */
-    bool isAtTarget() const { return _currentAngle == _targetAngle; }
+    bool isAtTarget() const { return abs(_currentAngle - _targetAngle) < 0.1f; }
 
     int getDifference();
 
    private:
     Servo _servo;
     int _pin;
-    int _currentAngle;
-    int _targetAngle;
-    int _startAngle;
+    float _currentAngle;
+    float _targetAngle;
+    float _startAngle;
     unsigned long _stepInterval;
     unsigned long _lastStepTime;
+    int _lastWrittenUs;
 };
 
 #endif

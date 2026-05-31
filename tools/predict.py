@@ -13,6 +13,9 @@ def predict_image(img_path, model_path="model.pth"):
 
     img = Image.open(img_path)
     img = transform(img).unsqueeze(0).to(device)
+    
+    # Binarização
+    img = (img > 0.5).float()
 
     with torch.no_grad():
         output = model(img)

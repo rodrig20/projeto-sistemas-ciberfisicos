@@ -6,5 +6,7 @@ build/
 
 model*
 !model.py
+!model.pth
+!model.tflite
 
 tools/data/empty

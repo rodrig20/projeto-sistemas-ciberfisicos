@@ -13,9 +13,22 @@ struct RobotPose {
 };
 
 /**
- * @brief Nomes das posições pré-definidas.
+ * @brief Nomes das sequências disponíveis para o utilizador.
  */
-enum PositionName { DEFAULT, START, TL, TC, TR, CL, CC, CR, BL, BC, BR };
+enum SequenceName {
+    BC,
+    BR,
+    BL,
+    CC,
+    CR,
+    CL,
+    TC,
+    TR,
+    TL,
+    BASE1,
+    BASE2,
+    WAIT,
+};
 
 class RobotController {
    public:
@@ -25,36 +38,47 @@ class RobotController {
     RobotController(int pin1, int pin2, int pin3);
 
     /**
-     * @brief Inicializa os servos e coloca-os na posição inicial.
+     * @brief Inicializa os servos e executa a sequência inicial.
      */
-    void begin(PositionName pos_name);
+    void begin(SequenceName seq = BASE1);
 
     /**
-     * @brief Move o robô para uma pose pré-definida.
+     * @brief Executa uma sequência pelo nome.
      */
-    void moveToPose(PositionName nome);
+    void playSequence(SequenceName nome);
 
     /**
-     * @brief Atualiza o movimento de todos os servos. Deve ser chamado no
-     * loop().
-     * @return true se algum motor ainda se estiver a mover.
+     * @brief Move o robô para coordenadas X,Y em mm (0 a 75).
+     */
+    void moveToXY(float x, float y);
+
+    /**
+     * @brief Move os motores para ângulos específicos (controlo manual).
+     */
+    void moveToAngles(int m1, int m2, int m3);
+
+    /**
+     * @brief Atualiza o movimento. Deve ser chamado no loop().
+     * @return true se estiver a processar movimento ou sequência.
      */
     bool update();
 
-    /**
-     * @brief Define a velocidade do movimento (intervalo entre passos).
-     */
     void setSpeed(unsigned long interval);
 
    private:
     SmoothServo _s1, _s2, _s3;
 
-    /**
-     * @brief Move o robô para coordenadas (ângulos) específicas.
-     */
-    void moveToAngles(int m1, int m2, int m3);
+    // Estado da sequência
+    RobotPose* _currentSequence;
+    int _sequenceSteps;
+    int _currentStep;
+    bool _isSequencing;
+    unsigned long _lastStepTime;
+    unsigned long _stepDelay;
+    unsigned long _baseStepInterval;
 
-    RobotPose getPoseData(PositionName nome);
+    void applyAnglesSynchronized(int m1, int m2, int m3);
+    void executeInternalSequence(RobotPose* sequence, int steps);
 };
 
 #endif

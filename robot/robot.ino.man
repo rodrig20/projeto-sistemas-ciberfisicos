@@ -1,0 +1,72 @@
+#include "RobotController.h"
+
+RobotController rc(D6, D9, D3);
+String serialBuffer = "";
+
+void setup() {
+    Serial.begin(115200);
+    rc.begin();
+
+    // Aguarda a porta serial estar pronta
+    while (!Serial) {
+        Serial.println("[SYS] Serial");
+    }
+
+    Serial.println("[SYS] Pure Manual Serial Control Ready.");
+    rc.playSequence(WAIT);
+}
+
+void processSerialCommand(String input) {
+    // Comando para Mover Ângulos: M:m1,m2,m3
+    if (input.startsWith("M:")) {
+        int firstComma = input.indexOf(',');
+        int secondComma = input.indexOf(',', firstComma + 1);
+        if (firstComma != -1 && secondComma != -1) {
+            int m1 = input.substring(2, firstComma).toInt();
+            int m2 = input.substring(firstComma + 1, secondComma).toInt();
+            int m3 = input.substring(secondComma + 1).toInt();
+            rc.moveToAngles(m1, m2, m3);
+            Serial.println("[MAN] Move Angles: " + String(m1) + "," +
+                           String(m2) + "," + String(m3));
+        }
+    }
+    // Comando para Mover Coordenadas: XY:x,y
+    else if (input.startsWith("XY:")) {
+        int comma = input.indexOf(',');
+        if (comma != -1) {
+            float x = input.substring(3, comma).toFloat();
+            float y = input.substring(comma + 1).toFloat();
+            rc.moveToXY(x, y);
+            Serial.println("[MAN] Move XY: " + String(x) + "," + String(y));
+        }
+    }
+    // Comando para Executar Sequência: S:id
+    else if (input.startsWith("S:")) {
+        int seqID = input.substring(2).toInt();
+        if (seqID >= 0 && seqID <= 11) {
+            rc.playSequence((SequenceName)seqID);
+            Serial.println("[MAN] Sequence: " + String(seqID));
+        }
+    }
+    // Comando para Pose de Espera: W:
+    else if (input.startsWith("W:")) {
+        rc.playSequence(WAIT);
+        Serial.println("[MAN] Wait pose executed.");
+    }
+}
+
+void loop() {
+    // Atualiza o estado dos servos (movimento suave)
+    rc.update();
+
+    // Processamento de comandos Serial
+    while (Serial.available() > 0) {
+        char c = Serial.read();
+        if (c == '\n') {
+            processSerialCommand(serialBuffer);
+            serialBuffer = "";
+        } else if (c != '\r') {
+            serialBuffer += c;
+        }
+    }
+}
